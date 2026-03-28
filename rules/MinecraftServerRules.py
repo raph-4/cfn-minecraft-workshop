@@ -47,8 +47,8 @@ class ServerJarUrlRequired(CloudFormationLintRule):
                     ['Parameters', 'ServerJarUrl', 'Default'],
                     'ServerJarUrl must start with https://'
                 ))
-            placeholders = ['example.com', 'your-url-here', 'TODO', 'placeholder', '']
-            if any(p in url.lower() for p in placeholders):
+            placeholders = ['example.com', 'your-url-here', 'TODO', 'placeholder']
+            if url == '' or any(p in url.lower() for p in placeholders):
                 matches.append(RuleMatch(
                     ['Parameters', 'ServerJarUrl', 'Default'],
                     'ServerJarUrl looks like a placeholder — set it to a real JAR download URL'
@@ -98,7 +98,7 @@ class JavaRamSanityCheck(CloudFormationLintRule):
     shortdesc   = 'JavaMaxRam too high for selected instance type'
     description = (
         'JavaMaxRam should leave at least 512 MB for the OS. '
-        'On a t4g.small (2 GB), do not exceed 1500M.'
+        'On a t4g.small (2 GB), do not exceed 1536M.'
     )
     tags        = ['parameters']
 

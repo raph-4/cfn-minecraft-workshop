@@ -261,6 +261,7 @@ Resources:
   # ---------------------------------------------------------------------------
   MinecraftSubnet:
     Type: AWS::EC2::Subnet
+    DependsOn: MinecraftInstance
     Properties:
       VpcId: !Ref MinecraftVPC
       CidrBlock: 10.0.1.0/24

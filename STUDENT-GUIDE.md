@@ -71,7 +71,7 @@ Lines starting with **E** are errors and will block the CI check. Lines starting
 
 ## Part 4 — Fix the bugs
 
-There are three things to fix. Use the linter output to locate them in `minecraft-server.yaml`.
+There are four things to fix. Three are caught by `cfn-lint`; the fourth only surfaces in the `sam validate` CI job.
 
 ### Bug 1 — `JavaMaxRam` is too high (E9002)
 
@@ -141,6 +141,29 @@ EIPAssociation:
 
 ---
 
+### Bug 4 — Circular dependency in `MinecraftSubnet` (SAM validate)
+
+`MinecraftSubnet` has a `DependsOn: MinecraftInstance` attribute. But `MinecraftInstance` already references `MinecraftSubnet` via `!Ref` in its `NetworkInterfaces` — so each resource is waiting for the other to exist first. CloudFormation cannot resolve this and rejects the template.
+
+`cfn-lint` does not always catch circular dependencies. **This bug only surfaces in the `SAM Validate` CI job**, which is why both checks exist.
+
+The fix is to remove the `DependsOn: MinecraftInstance` line from `MinecraftSubnet` — the subnet has no real dependency on the instance and CloudFormation will figure out the correct creation order automatically from the `!Ref`.
+
+<details>
+<summary>Hint</summary>
+
+```yaml
+MinecraftSubnet:
+  Type: AWS::EC2::Subnet
+  # DependsOn: MinecraftInstance  <-- remove this line
+  Properties:
+    ...
+```
+
+</details>
+
+---
+
 ## Part 5 — Optional: set a custom domain
 
 The template has a `ServerDomain` parameter. If you own a domain name and want to point it at your server, set it here and the `ServerAddress` output will show the domain-based address instead of the raw IP. Leave it blank if you don't have one — the Elastic IP works fine.
@@ -157,15 +180,25 @@ Run the linter again after making your changes:
 cfn-lint minecraft-server.yaml --append-rules rules/
 ```
 
-Expected output after all three fixes:
+Expected `cfn-lint` output after all four fixes:
 
 ```
 W9001  AllowSshCidr is 0.0.0.0/0 ...   minecraft-server.yaml:138
 ```
 
-Only the W9001 warning should remain (SSH open to the world). This is intentional for the workshop — in a real deployment you would set `AllowSshCidr` to your own IP. The CI workflow is configured to allow warnings through without failing.
+Only the W9001 warning should remain. Exit code should be **4** (warnings only), not 2 or 6.
 
-Exit code should be **4** (warnings only), not 2 or 6.
+Also run SAM validate locally to check the circular dependency fix:
+
+```bash
+sam validate --template minecraft-server.yaml --region us-east-1
+```
+
+Expected output after the fix:
+
+```
+minecraft-server.yaml is a valid SAM Template
+```
 
 ---
 

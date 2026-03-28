@@ -154,6 +154,14 @@ Parameters:
     MaxValue: 500
     Description: Root EBS volume size in GB.
 
+  ServerDomain:
+    Type: String
+    Default: ''
+    Description: >
+      Optional. A custom domain name pointing to the Elastic IP (e.g. mc.example.com).
+      If provided, the ServerAddress output will show this instead of the raw IP.
+      Leave blank to use the Elastic IP address directly.
+
 
 # =============================================================================
 # CONDITIONS
@@ -172,6 +180,10 @@ Conditions:
   # True when the user provided a key pair name; false when left blank.
   # Used below to conditionally attach the KeyName property to the EC2 instance.
   HasKeyPair: !Not [!Equals [!Ref KeyPairName, '']]
+
+  # True when the user provided a custom domain name for the server.
+  # Used in Outputs to show the domain-based address instead of the raw IP.
+  HasDomain: !Not [!Equals [!Ref ServerDomain, '']]
 
 
 # =============================================================================
@@ -578,7 +590,10 @@ Outputs:
 
   ServerAddress:
     Description: Server address to paste into Minecraft multiplayer
-    Value: !Sub '${MinecraftEIP}:${ServerPort}'
+    Value: !If
+      - HasDomain
+      - !Sub '${ServerDomain}:${ServerPort}'
+      - !Sub '${MinecraftEIP}:${ServerPort}'
 
   InstanceId:
     Description: EC2 Instance ID (use with SSM Session Manager)

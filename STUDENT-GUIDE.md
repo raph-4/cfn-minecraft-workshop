@@ -53,6 +53,7 @@ You will see output like:
 
 ```
 E9002  JavaMaxRam (2G) exceeds usable RAM for t4g.small ...   minecraft-server.yaml:91
+E9003  Motd is still the default ("A Minecraft Server on AWS") ...   minecraft-server.yaml:116
 W3010  Property EIP is for EC2-Classic which has been retired ...   minecraft-server.yaml:429
 W9001  AllowSshCidr is 0.0.0.0/0 ...   minecraft-server.yaml:138
 ```
@@ -71,7 +72,7 @@ Lines starting with **E** are errors and will block the CI check. Lines starting
 
 ## Part 4 — Fix the bugs
 
-There are two things to fix. Use the linter output to locate them in `minecraft-server.yaml`.
+There are three things to fix. Use the linter output to locate them in `minecraft-server.yaml`.
 
 ### Bug 1 — `JavaMaxRam` is too high (E9002)
 
@@ -92,7 +93,26 @@ JavaMaxRam:
 
 ---
 
-### Bug 2 — `EIPAssociation` uses the wrong property (W3010)
+### Bug 2 — `Motd` has not been changed from the default (E9003)
+
+When players open the Minecraft multiplayer screen, the MOTD (Message of the Day) appears under your server's address. It currently reads **"A Minecraft Server on AWS"** — the default placeholder. Every student deploying this template would have the same server name, which is not very useful.
+
+Find the `Motd` parameter and change the default to something that identifies your server.
+
+<details>
+<summary>Hint</summary>
+
+```yaml
+Motd:
+  Type: String
+  Default: 'My Workshop Server'   # change this to anything other than the default
+```
+
+</details>
+
+---
+
+### Bug 3 — `EIPAssociation` uses the wrong property (W3010)
 
 The `EIPAssociation` resource uses a property called `EIP`. That property was for **EC2-Classic**, which AWS retired in 2022. This template deploys into a **VPC**, so the correct property is `AllocationId`.
 
@@ -120,7 +140,15 @@ EIPAssociation:
 
 ---
 
-## Part 5 — Verify your fixes locally
+## Part 5 — Optional: set a custom domain
+
+The template has a `ServerDomain` parameter. If you own a domain name and want to point it at your server, set it here and the `ServerAddress` output will show the domain-based address instead of the raw IP. Leave it blank if you don't have one — the Elastic IP works fine.
+
+If you do set it, make sure it's your real domain — the custom rule `W9003` will warn if it looks like a placeholder (e.g. `example.com`).
+
+---
+
+## Part 6 — Verify your fixes
 
 Run the linter again after making your changes:
 
@@ -128,7 +156,7 @@ Run the linter again after making your changes:
 cfn-lint minecraft-server.yaml --append-rules rules/
 ```
 
-Expected output after both fixes:
+Expected output after all three fixes:
 
 ```
 W9001  AllowSshCidr is 0.0.0.0/0 ...   minecraft-server.yaml:138
@@ -140,19 +168,19 @@ Exit code should be **4** (warnings only), not 2 or 6.
 
 ---
 
-## Part 6 — Commit and push
+## Part 7 — Commit and push
 
-Stage and commit only the template file:
+Stage and commit your changes:
 
 ```bash
 git add minecraft-server.yaml
-git commit -m "fix: correct JavaMaxRam default and EIPAssociation property"
+git commit -m "fix: correct JavaMaxRam, Motd, and EIPAssociation"
 git push -u origin fix/template-bugs
 ```
 
 ---
 
-## Part 7 — Open a Pull Request
+## Part 8 — Open a Pull Request
 
 1. Go to your fork on GitHub
 2. Click the **"Compare & pull request"** banner that appears after you push
@@ -162,7 +190,7 @@ git push -u origin fix/template-bugs
 
 ---
 
-## Part 8 — Watch the CI checks
+## Part 9 — Watch the CI checks
 
 Once the PR is open, scroll down to the **Checks** section. Two workflows will run automatically:
 

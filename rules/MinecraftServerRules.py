@@ -143,6 +143,80 @@ class JavaRamSanityCheck(CloudFormationLintRule):
         return matches
 
 
+class MotdIsDefault(CloudFormationLintRule):
+    """
+    Errors when Motd is still the default value.
+    The MOTD is the message players see in the Minecraft server list — leaving
+    it as the generic default means your server looks like every other AWS demo.
+    Students must set it to something meaningful before deploying.
+    """
+    id          = 'E9003'
+    shortdesc   = 'Motd has not been changed from the default'
+    description = (
+        'Motd is still set to the default value "A Minecraft Server on AWS". '
+        'Update it to something that identifies your server.'
+    )
+    tags        = ['parameters']
+
+    DEFAULT_MOTD = 'A Minecraft Server on AWS'
+
+    def match(self, cfn):
+        matches = []
+
+        motd = (
+            cfn.template
+               .get('Parameters', {})
+               .get('Motd', {})
+               .get('Default', None)
+        )
+
+        if motd == self.DEFAULT_MOTD:
+            matches.append(RuleMatch(
+                ['Parameters', 'Motd', 'Default'],
+                f'Motd is still the default ("{self.DEFAULT_MOTD}") — give your server a unique name'
+            ))
+
+        return matches
+
+
+class ServerDomainIsPlaceholder(CloudFormationLintRule):
+    """
+    Warns when ServerDomain is set to a value that looks like a placeholder.
+    Students who configure a custom domain should point it at the Elastic IP
+    before deploying — a placeholder domain will produce a non-functional address
+    in the ServerAddress output.
+    """
+    id          = 'W9003'
+    shortdesc   = 'ServerDomain looks like a placeholder'
+    description = (
+        'ServerDomain is set to a value that looks like a placeholder. '
+        'Either set it to your real domain or leave it blank to use the Elastic IP.'
+    )
+    tags        = ['parameters']
+
+    def match(self, cfn):
+        matches = []
+
+        domain = (
+            cfn.template
+               .get('Parameters', {})
+               .get('ServerDomain', {})
+               .get('Default', None)
+        )
+
+        if domain is None or domain == '':
+            return matches
+
+        placeholders = ['example.com', 'your-domain', 'TODO', 'placeholder', 'yourdomain']
+        if any(p in domain.lower() for p in placeholders):
+            matches.append(RuleMatch(
+                ['Parameters', 'ServerDomain', 'Default'],
+                f'ServerDomain ("{domain}") looks like a placeholder — set it to your real domain or leave it blank'
+            ))
+
+        return matches
+
+
 class EbsVolumeTooSmall(CloudFormationLintRule):
     """
     Warns if EbsVolumeSize is set below 10 GB.

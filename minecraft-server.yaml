@@ -87,7 +87,7 @@ Parameters:
 
   JavaMaxRam:
     Type: String
-    Default: '2G'
+    Default: '1536M'
     Description: >
       Maximum JVM heap size. Use M for megabytes or G for gigabytes (e.g. 2G).
       Must leave headroom for the OS — don't set this to the full instance RAM.
@@ -108,7 +108,7 @@ Parameters:
 
   Motd:
     Type: String
-    Default: 'A Minecraft Server on AWS'
+    Default: 'Cloud Craft'
     Description: Message shown in the Minecraft multiplayer server list.
 
   Difficulty:
@@ -133,7 +133,7 @@ Parameters:
 
   AllowSshCidr:
     Type: String
-    Default: '0.0.0.0/0'
+    Default: '94.15.121.19/32'
     Description: >
       CIDR block allowed to connect on port 22 (SSH).
       Best practice: set this to YOUR public IP with /32 (e.g. 203.0.113.5/32).
@@ -261,7 +261,7 @@ Resources:
   # ---------------------------------------------------------------------------
   MinecraftSubnet:
     Type: AWS::EC2::Subnet
-    DependsOn: MinecraftInstance
+    # DependsOn: MinecraftInstance
     Properties:
       VpcId: !Ref MinecraftVPC
       CidrBlock: 10.0.1.0/24
@@ -439,7 +439,7 @@ Resources:
     Type: AWS::EC2::EIPAssociation
     Properties:
       InstanceId: !Ref MinecraftInstance
-      EIP: !Ref MinecraftEIP
+      AllocationId: !GetAtt MinecraftEIP.AllocationId
 
 
   # ===========================================================================
@@ -583,7 +583,7 @@ Resources:
   # Versioning is enabled so you can restore to any previous point in time.
   # ===========================================================================
   WorldBackupBucket:
-    Type: AWS::S3::Backet
+    Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub '${AWS::StackName}-world-backup'
       VersioningConfiguration:
